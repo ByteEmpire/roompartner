@@ -2,14 +2,6 @@
 
 A full-stack roommate finder platform that connects people looking for shared accommodation. Built with Next.js, NestJS, PostgreSQL, Socket.io, Cloudinary, and Razorpay.
 
----
-
-## 🚀 Live Demo
-
-> Coming Soon
-
----
-
 ## ✨ Features
 
 ### Core Features
@@ -282,7 +274,7 @@ Frontend runs at: `http://localhost:3000`
 
 ## 👨‍💻 Developer
 
-**Shubh** - Full Stack Developer
+**Shubhranshu** - Full Stack Developer
 
 ---
 
