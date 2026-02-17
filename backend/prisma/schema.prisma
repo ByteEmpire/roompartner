@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============ USER & AUTH ============
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  role          Role      @default(USER)
+  isVerified    Boolean   @default(false)
+  refreshToken  String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  profile          Profile?
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
+  subscription     Subscription?
+  payments         Payment[]
+  
+  @@index([email])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// ============ PROFILE ============
+
+model Profile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Basic Info
+  fullName        String
+  age             Int
+  gender          Gender
+  phoneNumber     String?
+  bio             String?  @db.Text
+  profileImage    String?
+  
+  // Location & Budget
+  city            String
+  locality        String?
+  budget          Int
+  moveInDate      DateTime?
+  
+  // Preferences
+  preferredGender GenderPreference
+  occupationType  OccupationType
+  foodPreference  FoodPreference?
+  drinking        Boolean  @default(false)
+  smoking         Boolean  @default(false)
+  pets            Boolean  @default(false)
+  
+  // Room Images
+  roomImages      String[]
+  
+  // Visibility
+  isActive        Boolean  @default(true)
+  lastActive      DateTime @default(now())
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([city, budget])
+  @@index([isActive, lastActive])
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum GenderPreference {
+  MALE
+  FEMALE
+  ANY
+}
+
+enum OccupationType {
+  STUDENT
+  WORKING_PROFESSIONAL
+  FREELANCER
+  OTHER
+}
+
+enum FoodPreference {
+  VEGETARIAN
+  NON_VEGETARIAN
+  VEGAN
+  JAIN
+}
+
+// ============ CHAT ============
+
+model Message {
+  id          String   @id @default(cuid())
+  content     String   @db.Text
+  senderId    String
+  receiverId  String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  sender      User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User     @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  @@index([senderId, receiverId, createdAt])
+  @@index([receiverId, isRead])
+}
+
+// ============ SUBSCRIPTIONS ============
+
+model Subscription {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  plan        SubscriptionPlan
+  status      SubscriptionStatus
+  startDate   DateTime @default(now())
+  endDate     DateTime
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId, status])
+  @@index([endDate])
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PREMIUM
+  ELITE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+// ============ PAYMENTS ============
+
+model Payment {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  razorpayOrderId   String   @unique
+  razorpayPaymentId String?  @unique
+  razorpaySignature String?
+  
+  amount            Int
+  currency          String   @default("INR")
+  status            PaymentStatus
+  plan              SubscriptionPlan
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([razorpayOrderId])
+}
+
+enum PaymentStatus {
+  CREATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
