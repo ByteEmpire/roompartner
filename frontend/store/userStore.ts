@@ -30,7 +30,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const response = await api.get<Profile>('/profiles/me')
-      const profile = response.data.data || response.data
+      const profile = (response.data as any).data || response.data
       set({ profile, isLoading: false })
     } catch (error: any) {
       // If 404, profile doesn't exist yet, that's okay
