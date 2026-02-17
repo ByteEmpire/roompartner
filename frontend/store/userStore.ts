@@ -33,7 +33,6 @@ export const useUserStore = create<UserState>((set, get) => ({
       const profile = (response.data as any).data || response.data
       set({ profile, isLoading: false })
     } catch (error: any) {
-      // If 404, profile doesn't exist yet, that's okay
       if (error.response?.status === 404) {
         set({ profile: null, isLoading: false })
       } else {
@@ -46,7 +45,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const response = await api.post<Profile>('/profiles', data)
-      const profile = response.data.data || response.data
+      const profile = (response.data as any).data || response.data
       set({ profile, isLoading: false })
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Failed to create profile', isLoading: false })
@@ -58,7 +57,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const response = await api.put<Profile>('/profiles/me', data)
-      const profile = response.data.data || response.data
+      const profile = (response.data as any).data || response.data
       set({ profile, isLoading: false })
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Failed to update profile', isLoading: false })
@@ -69,7 +68,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   uploadProfileImage: async (file: File) => {
     try {
       const { data: signData } = await api.get('/uploads/signature/profile')
-      const signature = signData.data || signData
+      const signature = (signData as any).data || signData
 
       const formData = new FormData()
       formData.append('file', file)
@@ -95,7 +94,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     try {
       const uploadPromises = files.map(async (file) => {
         const { data: signData } = await api.get('/uploads/signature/room')
-        const signature = signData.data || signData
+        const signature = (signData as any).data || signData
 
         const formData = new FormData()
         formData.append('file', file)
@@ -125,7 +124,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     try {
       const params = filters || get().filters
       const response = await api.get<User[]>('/matches', { params })
-      const matches = response.data.data || response.data
+      const matches = (response.data as any).data || response.data
       set({ matches, isLoading: false })
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Failed to load matches', isLoading: false })
