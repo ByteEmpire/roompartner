@@ -1,57 +1,17 @@
-@import "tailwindcss";
-
-/* ================================
-   Tailwind v4 Theme Tokens
-================================ */
-@theme {
-  /* Dark Theme Colors */
-  --color-background: hsl(240 10% 3.9%);
-  --color-foreground: hsl(0 0% 98%);
-
-  --color-border: hsl(240 3.7% 15.9%);
-  --color-input: hsl(240 3.7% 15.9%);
-  --color-ring: hsl(263 70% 50%);
-
-  /* Primary - Purple/Violet */
-  --color-primary: hsl(263 70% 50%);
-  --color-primary-foreground: hsl(0 0% 100%);
-
-  /* Secondary */
-  --color-secondary: hsl(240 3.7% 15.9%);
-  --color-secondary-foreground: hsl(0 0% 98%);
-
-  /* Muted */
-  --color-muted: hsl(240 3.7% 15.9%);
-  --color-muted-foreground: hsl(240 5% 64.9%);
-
-  /* Accent */
-  --color-accent: hsl(240 3.7% 15.9%);
-  --color-accent-foreground: hsl(0 0% 98%);
-
-  /* Destructive */
-  --color-destructive: hsl(0 62.8% 30.6%);
-  --color-destructive-foreground: hsl(0 0% 98%);
-
-  /* Card */
-  --color-card: hsl(240 10% 3.9%);
-  --color-card-foreground: hsl(0 0% 98%);
-
-  /* Border Radius */
-  --radius-lg: 0.5rem;
-  --radius-md: 0.375rem;
-  --radius-sm: 0.25rem;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ================================
    Base Styles
 ================================ */
 * {
-  border-color: theme(--color-border);
+  border-color: hsl(var(--border));
 }
 
 body {
-  background-color: theme(--color-background);
-  color: theme(--color-foreground);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -88,7 +48,7 @@ html {
 ================================ */
 ::selection {
   background-color: hsl(263 70% 50% / 0.2);
-  color: theme(--color-foreground);
+  color: hsl(var(--foreground));
 }
 
 /* ================================
@@ -104,8 +64,7 @@ html {
 }
 
 /* ================================
-   ✅ TAILWIND V3 COMPATIBILITY
-   (Makes @theme work with current Next.js)
+   CSS Variables (Tailwind v3)
 ================================ */
 :root {
   --background: 240 10% 3.9%;
@@ -128,12 +87,8 @@ html {
 }
 
 /* ================================
-   ✅ INPUT/TEXTAREA TEXT VISIBILITY FIX
-   Dark backgrounds = light text
-   Light backgrounds = dark text
+   Input/Textarea Text Visibility
 ================================ */
-
-/* Default (dark theme) - Light text */
 input,
 textarea,
 select {
@@ -147,7 +102,6 @@ textarea::placeholder {
   opacity: 1;
 }
 
-/* Light backgrounds - Dark text override */
 .bg-white input,
 .bg-white textarea,
 .bg-white select,
@@ -180,7 +134,6 @@ textarea::placeholder {
   color: #9ca3af;
 }
 
-/* Card components with light backgrounds */
 [class*="bg-white"] input,
 [class*="bg-white"] textarea,
 [class*="bg-white"] select,
@@ -190,7 +143,9 @@ textarea::placeholder {
   color: #111827 !important;
 }
 
-/* Date/Time inputs */
+/* ================================
+   Date/Time Inputs
+================================ */
 input[type="date"],
 input[type="time"],
 input[type="datetime-local"] {
@@ -207,7 +162,9 @@ input[type="datetime-local"] {
   color: #111827 !important;
 }
 
-/* Autofill fixes */
+/* ================================
+   Autofill Fixes
+================================ */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
