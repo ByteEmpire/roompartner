@@ -11,7 +11,10 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Loading from '@/components/ui/Loading'
-import { MapPin, Briefcase, Home, MessageSquare, Filter, X } from 'lucide-react'
+import { 
+  MapPin, Briefcase, Home, MessageSquare, Filter, X,
+  ZoomIn, Download, ChevronLeft, ChevronRight 
+} from 'lucide-react'
 import { formatCurrency, getInitials } from '@/lib/utils'
 import Image from 'next/image'
 
@@ -22,13 +25,16 @@ function MatchesContent() {
   const [localFilters, setLocalFilters] = useState<MatchFilters>({})
   const [hasActiveFilters, setHasActiveFilters] = useState(false)
 
-  // ✅ LOAD MATCHES ON PAGE LOAD (NO FILTERS)
+  // ✅ LIGHTBOX STATE
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxImages, setLightboxImages] = useState<string[]>([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
   useEffect(() => {
-    console.log('🔄 Loading all matches...')
+    console.log('📄 Loading all matches...')
     loadMatches({})
   }, [])
 
-  // ✅ CHECK IF ANY FILTERS ARE ACTIVE
   useEffect(() => {
     const active = !!(
       localFilters.city ||
@@ -59,6 +65,42 @@ function MatchesContent() {
     console.log('🗑️ Clearing filters')
     setLocalFilters({})
     loadMatches({})
+  }
+
+  // ✅ LIGHTBOX FUNCTIONS
+  const openLightbox = (images: string[], index: number) => {
+    setLightboxImages(images)
+    setCurrentImageIndex(index)
+    setLightboxOpen(true)
+  }
+
+  const closeLightbox = () => {
+    setLightboxOpen(false)
+  }
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % lightboxImages.length)
+  }
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + lightboxImages.length) % lightboxImages.length)
+  }
+
+  const downloadImage = async (imageUrl: string, index: number) => {
+    try {
+      const response = await fetch(imageUrl)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `room-image-${index + 1}.jpg`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Download failed:', error)
+    }
   }
 
   return (
@@ -206,22 +248,44 @@ function MatchesContent() {
                     )}
                   </div>
 
-                  {/* Room Images Preview - NEW */}
+                  {/* ✅ Room Images with Zoom/Download */}
                   {profile.roomImages && profile.roomImages.length > 0 && (
                     <div className="mb-4">
-                      <div className="flex gap-2 overflow-x-auto pb-2">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Flat Images</p>
+                      <div className="grid grid-cols-3 gap-2">
                         {profile.roomImages.slice(0, 3).map((imageUrl, index) => (
-                          <Image
-                            key={index}
-                            src={imageUrl}
-                            alt={`Room ${index + 1}`}
-                            width={100}
-                            height={75}
-                            className="w-24 h-20 object-cover rounded border border-gray-200 flex-shrink-0"
-                          />
+                          <div key={index} className="relative group">
+                            <Image
+                              src={imageUrl}
+                              alt={`Room ${index + 1}`}
+                              width={100}
+                              height={75}
+                              className="w-full h-24 object-cover rounded border border-gray-200"
+                            />
+                            {/* Hover Overlay */}
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 rounded transition-all duration-200 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                              <button
+                                onClick={() => openLightbox(profile.roomImages || [], index)}
+                                className="p-1.5 bg-white rounded-full hover:bg-gray-100 transition-colors"
+                                title="View full size"
+                              >
+                                <ZoomIn className="w-4 h-4 text-gray-700" />
+                              </button>
+                              <button
+                                onClick={() => downloadImage(imageUrl, index)}
+                                className="p-1.5 bg-white rounded-full hover:bg-gray-100 transition-colors"
+                                title="Download"
+                              >
+                                <Download className="w-4 h-4 text-gray-700" />
+                              </button>
+                            </div>
+                          </div>
                         ))}
                         {profile.roomImages.length > 3 && (
-                          <div className="w-24 h-20 bg-gray-100 rounded border border-gray-200 flex items-center justify-center flex-shrink-0">
+                          <div 
+                            className="w-full h-24 bg-gray-100 rounded border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                            onClick={() => openLightbox(profile.roomImages || [], 3)}
+                          >
                             <span className="text-sm font-medium text-gray-600">
                               +{profile.roomImages.length - 3}
                             </span>
@@ -230,7 +294,6 @@ function MatchesContent() {
                       </div>
                     </div>
                   )}
-
 
                   {/* Profile Info */}
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -297,6 +360,77 @@ function MatchesContent() {
           </div>
         )}
       </div>
+
+      {/* ✅ LIGHTBOX MODAL */}
+      {lightboxOpen && lightboxImages.length > 0 && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 p-2 bg-white rounded-full hover:bg-gray-100 transition-colors z-10"
+          >
+            <X className="w-6 h-6 text-gray-700" />
+          </button>
+
+          {/* Download Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              downloadImage(lightboxImages[currentImageIndex], currentImageIndex)
+            }}
+            className="absolute top-4 right-20 p-2 bg-white rounded-full hover:bg-gray-100 transition-colors z-10"
+            title="Download"
+          >
+            <Download className="w-6 h-6 text-gray-700" />
+          </button>
+
+          {/* Previous Button */}
+          {lightboxImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                prevImage()
+              }}
+              className="absolute left-4 p-3 bg-white rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-700" />
+            </button>
+          )}
+
+          {/* Image */}
+          <div
+            className="relative max-w-5xl max-h-[90vh] mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={lightboxImages[currentImageIndex]}
+              alt={`Room ${currentImageIndex + 1}`}
+              width={1200}
+              height={800}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+            {/* Image Counter */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-4 py-2 rounded-full text-sm">
+              {currentImageIndex + 1} / {lightboxImages.length}
+            </div>
+          </div>
+
+          {/* Next Button */}
+          {lightboxImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                nextImage()
+              }}
+              className="absolute right-4 p-3 bg-white rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-700" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
