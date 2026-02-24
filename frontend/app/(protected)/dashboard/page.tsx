@@ -9,7 +9,7 @@ import Navbar from '@/components/layout/Navbar'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
-import Loading from '@/components/ui/Loading'
+import { DashboardSkeleton } from '@/components/ui/Skeleton'
 import { 
   Users, MessageSquare, Crown, CheckCircle2, AlertCircle, 
   Calendar, TrendingUp, MapPin, DollarSign, Star, ArrowRight 
@@ -39,33 +39,38 @@ function DashboardContent() {
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [matchLimit, setMatchLimit] = useState(5)
 
+  // ✅ PARALLEL LOADING - All API calls at once
   useEffect(() => {
     const loadData = async () => {
       try {
-        await loadProfile()
+        // Load everything in parallel using Promise.allSettled
+        const [profileResult, matchesRes, conversationsResult, subRes] = await Promise.allSettled([
+          loadProfile(),
+          api.get('/matches'),
+          loadConversations(),
+          api.get('/users/' + user?.id)
+        ])
         
-        const matchesRes = await api.get('/matches')
-        const matchesData = matchesRes.data.data || matchesRes.data
-        setMatchesCount(matchesData.length)
+        // Handle matches
+        if (matchesRes.status === 'fulfilled') {
+          const matchesData = matchesRes.value.data.data || matchesRes.value.data
+          setMatchesCount(matchesData.length)
+        }
         
-        await loadConversations()
-        
-        try {
-          const subRes = await api.get('/users/' + user?.id)
-          const userData = subRes.data.data || subRes.data
+        // Handle subscription
+        if (subRes.status === 'fulfilled') {
+          const userData = subRes.value.data.data || subRes.value.data
           if (userData.subscription) {
             setSubscription(userData.subscription)
             
-            // Set match limits
+            // Set match limits based on plan
             if (userData.subscription.plan === 'BASIC') setMatchLimit(20)
             else if (userData.subscription.plan === 'PREMIUM') setMatchLimit(50)
             else if (userData.subscription.plan === 'ELITE') setMatchLimit(100)
           }
-        } catch (error) {
-          console.log('No subscription')
         }
       } catch (error) {
-        console.error('Failed to load dashboard:', error)
+        console.error('Failed to load dashboard data:', error)
       } finally {
         setIsLoadingData(false)
       }
@@ -122,11 +127,14 @@ function DashboardContent() {
     }
   }, [profile, profileLoading, router, matchesCount, conversations.size])
 
+  // ✅ SHOW SKELETON WHILE LOADING
   if (isLoadingData || profileLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <Loading className="py-20" text="Loading dashboard..." />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <DashboardSkeleton />
+        </div>
       </div>
     )
   }

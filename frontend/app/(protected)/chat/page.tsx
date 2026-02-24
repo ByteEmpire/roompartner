@@ -8,7 +8,7 @@ import { socketService } from '@/lib/socket'
 import Navbar from '@/components/layout/Navbar'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import { Card } from '@/components/ui/Card'
-import Loading from '@/components/ui/Loading'
+import { ChatSkeleton } from '@/components/ui/Skeleton'
 import { Send, Search } from 'lucide-react'
 import { formatRelativeTime, getInitials } from '@/lib/utils'
 import Image from 'next/image'
@@ -41,37 +41,42 @@ function ChatContent() {
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // ✅ CONNECT SOCKET
+  // ✅ PARALLEL LOADING - Socket + Conversations + User Info
   useEffect(() => {
-    if (accessToken) {
-      console.log('🔌 Connecting socket with token')
-      socketService.connect(accessToken)
-    }
-    return () => socketService.disconnect()
-  }, [accessToken])
-
-  // ✅ LOAD CONVERSATIONS
-  useEffect(() => {
-    loadConversations()
-  }, [loadConversations])
-
-  // ✅ HANDLE URL PARAMETER - Load user info if coming from matches
-  useEffect(() => {
-    const loadUserInfo = async () => {
-      if (initialUserId) {
-        console.log('👤 Loading user info for:', initialUserId)
-        try {
-          const response = await api.get(`/users/${initialUserId}`)
-          const userData = response.data.data || response.data
-          setOtherUserInfo(userData)
-          setActiveConversation(initialUserId)
-        } catch (error) {
-          console.error('Failed to load user info:', error)
-        }
+    const initChat = async () => {
+      // Connect socket
+      if (accessToken) {
+        console.log('🔌 Connecting socket with token')
+        socketService.connect(accessToken)
       }
+
+      // Load conversations and user info in parallel
+      const promises = [loadConversations()]
+      
+      if (initialUserId) {
+        promises.push(loadUserInfo(initialUserId))
+      }
+      
+      await Promise.allSettled(promises)
     }
-    loadUserInfo()
-  }, [initialUserId, setActiveConversation])
+
+    initChat()
+    
+    return () => socketService.disconnect()
+  }, [accessToken, initialUserId, loadConversations])
+
+  // Extracted function for loading user info
+  const loadUserInfo = async (userId: string) => {
+    console.log('👤 Loading user info for:', userId)
+    try {
+      const response = await api.get(`/users/${userId}`)
+      const userData = response.data.data || response.data
+      setOtherUserInfo(userData)
+      setActiveConversation(userId)
+    } catch (error) {
+      console.error('Failed to load user info:', error)
+    }
+  }
 
   // ✅ SOCKET LISTENERS
   useEffect(() => {
@@ -183,9 +188,10 @@ function ChatContent() {
               </div>
             </div>
 
+            {/* ✅ SHOW SKELETON WHILE LOADING */}
             <div className="flex-1 overflow-y-auto">
               {isLoading ? (
-                <Loading className="py-8" />
+                <ChatSkeleton />
               ) : filteredConversations.length === 0 ? (
                 <div className="p-4 text-center text-gray-600">
                   No conversations yet
