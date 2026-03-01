@@ -228,9 +228,9 @@ function MatchesContent() {
               if (!profile) return null
 
               return (
-                <Card key={match.id} variant="bordered" className="hover:shadow-lg transition-shadow">
-                  {/* Profile Image */}
-                  <div className="mb-4">
+                <Card key={match.id} variant="bordered" className="hover:shadow-lg transition-shadow flex flex-col h-full">
+                  {/* ✅ FIXED HEIGHT PROFILE IMAGE SECTION */}
+                  <div className="mb-4 flex-shrink-0">
                     {profile.profileImage ? (
                       <Image
                         src={profile.profileImage}
@@ -248,13 +248,13 @@ function MatchesContent() {
                     )}
                   </div>
 
-                  {/* ✅ Room Images with Zoom/Download */}
-                  {profile.roomImages && profile.roomImages.length > 0 && (
-                    <div className="mb-4">
+                  {/* ✅ FIXED HEIGHT ROOM IMAGES SECTION */}
+                  {profile.roomImages && profile.roomImages.length > 0 ? (
+                    <div className="mb-4 flex-shrink-0">
                       <p className="text-sm font-medium text-gray-700 mb-2">Flat Images</p>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-3 gap-2 h-24">
                         {profile.roomImages.slice(0, 3).map((imageUrl, index) => (
-                          <div key={index} className="relative group">
+                          <div key={index} className="relative group h-24">
                             <Image
                               src={imageUrl}
                               alt={`Room ${index + 1}`}
@@ -293,67 +293,86 @@ function MatchesContent() {
                         )}
                       </div>
                     </div>
+                  ) : (
+                    // ✅ PLACEHOLDER when no room images - maintains same height
+                    <div className="mb-4 flex-shrink-0">
+                      <p className="text-sm font-medium text-gray-400 mb-2">Flat Images</p>
+                      <div className="h-24 bg-gray-50 rounded border-2 border-dashed border-gray-200 flex items-center justify-center">
+                        <span className="text-xs text-gray-400">No images uploaded</span>
+                      </div>
+                    </div>
                   )}
 
-                  {/* Profile Info */}
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {profile.fullName}, {profile.age}
-                  </h3>
-                  {profile.bio && (
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{profile.bio}</p>
-                  )}
+                  {/* ✅ FLEXIBLE CONTENT SECTION - grows to fill space */}
+                  <div className="flex-grow flex flex-col">
+                    {/* Profile Info */}
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      {profile.fullName}, {profile.age}
+                    </h3>
+                    
+                    {/* ✅ FIXED HEIGHT BIO SECTION */}
+                    <div className="mb-4 h-10">
+                      {profile.bio ? (
+                        <p className="text-gray-600 text-sm line-clamp-2">{profile.bio}</p>
+                      ) : (
+                        <p className="text-gray-400 text-sm italic">No bio provided</p>
+                      )}
+                    </div>
 
-                  {/* Details */}
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
-                      <span className="truncate">
-                        {profile.city}
-                        {profile.locality && `, ${profile.locality}`}
-                      </span>
+                    {/* Details - Fixed spacing */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">
+                          {profile.city}
+                          {profile.locality && `, ${profile.locality}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Home className="w-4 h-4 mr-2 flex-shrink-0" />
+                        Budget: {formatCurrency(profile.budget)}/month
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Briefcase className="w-4 h-4 mr-2 flex-shrink-0" />
+                        {profile.occupationType.replace('_', ' ')}
+                      </div>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Home className="w-4 h-4 mr-2 flex-shrink-0" />
-                      Budget: {formatCurrency(profile.budget)}/month
+
+                    {/* ✅ FIXED HEIGHT LIFESTYLE TAGS */}
+                    <div className="flex flex-wrap gap-2 mb-4 min-h-[32px]">
+                      {profile.foodPreference && (
+                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                          {profile.foodPreference}
+                        </span>
+                      )}
+                      {profile.drinking && (
+                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                          Drinks
+                        </span>
+                      )}
+                      {profile.smoking && (
+                        <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">
+                          Smoker
+                        </span>
+                      )}
+                      {profile.pets && (
+                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+                          Pets
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Briefcase className="w-4 h-4 mr-2 flex-shrink-0" />
-                      {profile.occupationType.replace('_', ' ')}
+
+                    {/* ✅ ACTION BUTTON - always at bottom */}
+                    <div className="mt-auto">
+                      <Button
+                        className="w-full"
+                        onClick={() => router.push(`/chat?userId=${match.id}`)}
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Send Message
+                      </Button>
                     </div>
                   </div>
-
-                  {/* Lifestyle Tags */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {profile.foodPreference && (
-                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
-                        {profile.foodPreference}
-                      </span>
-                    )}
-                    {profile.drinking && (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
-                        Drinks
-                      </span>
-                    )}
-                    {profile.smoking && (
-                      <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">
-                        Smoker
-                      </span>
-                    )}
-                    {profile.pets && (
-                      <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
-                        Pets
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Action Button */}
-                  <Button
-                    className="w-full"
-                    onClick={() => router.push(`/chat?userId=${match.id}`)}
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Send Message
-                  </Button>
                 </Card>
               )
             })}
